@@ -1,4 +1,4 @@
-# HRNet from Jingdong Wang https://jingdongwang2017.github.io/
+# HRNet by Jingdong Wang https://jingdongwang2017.github.io/
 # welleast@outlook.com
 
 import os
@@ -276,6 +276,7 @@ class HighResolutionNet(nn.Module):
 
     def __init__(self,
                  hrnet_config, # 'hrnet18', 'hrnet32', 'hrnet48'
+                 num_inchannels,
                  num_outchannels,
                  norm_layer=None
                  ):
@@ -283,7 +284,7 @@ class HighResolutionNet(nn.Module):
 
         self.hrnet_config = hrnet_config
         
-        # HRNet Configs from Ke Sun
+        # HRNet Configs by Ke Sun
         # sunk@mail.ustc.edu.cn
 
         self.HRNet64 = {
@@ -333,7 +334,7 @@ class HighResolutionNet(nn.Module):
 
         # stem network
         # stem net
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(num_inchannels, 64, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn1 = self.norm_layer(64)
         self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn2 = self.norm_layer(64)
@@ -368,7 +369,7 @@ class HighResolutionNet(nn.Module):
         self.stage4, pre_stage_channels = self._make_stage(self.HRNet_Configs[hrnet_config],4 ,num_channels, 
                                                            multi_scale_output=True)
 
-        last_inp_channels = np.int(np.sum(pre_stage_channels))
+        last_inp_channels = int(np.sum(pre_stage_channels))
 
         self.last_layer = nn.Sequential(
             nn.Conv2d(
@@ -548,6 +549,7 @@ class HighResolutionNet(nn.Module):
         return model
 
 if __name__ == '__main__':
-    t = HighResolutionNet('hrnet48',6)
-    print(t)
+    input=torch.randn(16,3,256,256)
+    hrnet = HighResolutionNet('hrnet48',3,10)
+    print(hrnet(input).shape)
     print('okk!')
