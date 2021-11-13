@@ -88,9 +88,9 @@ class SiameseNet(nn.Module):
         return [out_t0_conv5_norm,out_t1_conv5_norm],[out_t0_fc7_norm,out_t1_fc7_norm],[out_t0_embedding_norm,out_t1_embedding_norm]
 
 if __name__ == '__main__':
-    input1=torch.randn(24,4,256,256)
-    input2=torch.randn(24,4,256,256)
-    siamesenet= SiameseNet(4,12,base='hrnet')
+    input1=torch.randn(4,4,256,256).cuda()
+    input2=torch.randn(4,4,256,256).cuda()
+    siamesenet= SiameseNet(4,12,base='hrnet').cuda()
     out = siamesenet(input1,input2)
     print(out[0][0].shape,out[0][1].shape)
     print(out[1][0].shape,out[1][1].shape)

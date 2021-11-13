@@ -112,7 +112,7 @@ class DAM(nn.Module):
 
 
 if __name__ == '__main__':
-    input=torch.randn(50,512,7,7)
-    danet=DAM(512,10)
+    input=torch.randn(50,512,7,7).cuda()
+    danet=DAM(512,10).cuda()
     print(danet(input)[0].shape,danet(input)[1].shape,danet(input)[2].shape)
     print('okk!')

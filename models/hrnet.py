@@ -549,7 +549,7 @@ class HighResolutionNet(nn.Module):
         return model
 
 if __name__ == '__main__':
-    input=torch.randn(16,3,256,256)
-    hrnet = HighResolutionNet('hrnet48',3,10)
+    input=torch.randn(16,3,256,256).cuda()
+    hrnet = HighResolutionNet('hrnet48',3,10).cuda()
     print(hrnet(input).shape)
     print('okk!')

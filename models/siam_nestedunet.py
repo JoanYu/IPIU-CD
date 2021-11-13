@@ -50,26 +50,40 @@ class SNUNet(nn.Module):
 
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.convs = []
-        self.Ups = []
-        for j in range(4):
-            self.conv = [conv_block_nested(in_planes, filters[0], filters[0])] if j == 0 else \
-                [conv_block_nested(filters[0] * (j+1) + filters[1], filters[0], filters[0])]
-            self.Up = []
-            for i in range(4-j):
-                tmp_conv = conv_block_nested(filters[i], filters[i+1], filters[i+1]) if j == 0 else \
-                    conv_block_nested(filters[i+1] * (j+1) + filters[i+2], filters[i+1], filters[i+1])
-                self.conv.append(tmp_conv)
-                self.Up.append(up(filters[i+1]))
-            self.convs.append(self.conv)
-            self.Ups.append(self.Up)
-        self.conv4 = [conv_block_nested(filters[0] * 5 + filters[1], filters[0], filters[0])]
-        self.convs.append(self.conv4)
+        self.conv0_0 = conv_block_nested(in_planes, filters[0], filters[0])
+        self.conv1_0 = conv_block_nested(filters[0], filters[1], filters[1])
+        self.Up1_0 = up(filters[1])
+        self.conv2_0 = conv_block_nested(filters[1], filters[2], filters[2])
+        self.Up2_0 = up(filters[2])
+        self.conv3_0 = conv_block_nested(filters[2], filters[3], filters[3])
+        self.Up3_0 = up(filters[3])
+        self.conv4_0 = conv_block_nested(filters[3], filters[4], filters[4])
+        self.Up4_0 = up(filters[4])
 
-        self.conv_final1 = nn.Conv2d(filters[0], out_planes, kernel_size=1)
-        self.conv_final2 = nn.Conv2d(filters[0], out_planes, kernel_size=1)
-        self.conv_final3 = nn.Conv2d(filters[0], out_planes, kernel_size=1)
-        self.conv_final4 = nn.Conv2d(filters[0], out_planes, kernel_size=1)
+        self.conv0_1 = conv_block_nested(filters[0] * 2 + filters[1], filters[0], filters[0])
+        self.conv1_1 = conv_block_nested(filters[1] * 2 + filters[2], filters[1], filters[1])
+        self.Up1_1 = up(filters[1])
+        self.conv2_1 = conv_block_nested(filters[2] * 2 + filters[3], filters[2], filters[2])
+        self.Up2_1 = up(filters[2])
+        self.conv3_1 = conv_block_nested(filters[3] * 2 + filters[4], filters[3], filters[3])
+        self.Up3_1 = up(filters[3])
+
+        self.conv0_2 = conv_block_nested(filters[0] * 3 + filters[1], filters[0], filters[0])
+        self.conv1_2 = conv_block_nested(filters[1] * 3 + filters[2], filters[1], filters[1])
+        self.Up1_2 = up(filters[1])
+        self.conv2_2 = conv_block_nested(filters[2] * 3 + filters[3], filters[2], filters[2])
+        self.Up2_2 = up(filters[2])
+
+        self.conv0_3 = conv_block_nested(filters[0] * 4 + filters[1], filters[0], filters[0])
+        self.conv1_3 = conv_block_nested(filters[1] * 4 + filters[2], filters[1], filters[1])
+        self.Up1_3 = up(filters[1])
+
+        self.conv0_4 = conv_block_nested(filters[0] * 5 + filters[1], filters[0], filters[0])
+
+        self.final1 = nn.Conv2d(filters[0], out_planes, kernel_size=1)
+        self.final2 = nn.Conv2d(filters[0], out_planes, kernel_size=1)
+        self.final3 = nn.Conv2d(filters[0], out_planes, kernel_size=1)
+        self.final4 = nn.Conv2d(filters[0], out_planes, kernel_size=1)
         self.conv_final = nn.Conv2d(out_planes * 4, out_planes, kernel_size=1)
 
 
@@ -81,42 +95,45 @@ class SNUNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
         
     def forward(self, xA, xB):
-        x0_0A = self.convs[0][0](xA)
-        x1_0A = self.convs[0][1](self.pool(x0_0A))
-        x2_0A = self.convs[0][2](self.pool(x1_0A))
-        x3_0A = self.convs[0][3](self.pool(x2_0A))
+        '''xA'''
+        x0_0A = self.conv0_0(xA)
+        x1_0A = self.conv1_0(self.pool(x0_0A))
+        x2_0A = self.conv2_0(self.pool(x1_0A))
+        x3_0A = self.conv3_0(self.pool(x2_0A))
+        # x4_0A = self.conv4_0(self.pool(x3_0A))
+        '''xB'''
+        x0_0B = self.conv0_0(xB)
+        x1_0B = self.conv1_0(self.pool(x0_0B))
+        x2_0B = self.conv2_0(self.pool(x1_0B))
+        x3_0B = self.conv3_0(self.pool(x2_0B))
+        x4_0B = self.conv4_0(self.pool(x3_0B))
 
-        x0_0B = self.convs[0][0](xB)
-        x1_0B = self.convs[0][1](self.pool(x0_0B))
-        x2_0B = self.convs[0][2](self.pool(x1_0B))
-        x3_0B = self.convs[0][3](self.pool(x2_0B))
-        x4_0B = self.convs[0][4](self.pool(x3_0B))
-
-        x0_1 = self.convs[1][0](torch.cat([x0_0A, x0_0B, self.Ups[0][0](x1_0B)], 1))
-        x1_1 = self.convs[1][1](torch.cat([x1_0A, x1_0B, self.Ups[0][1](x2_0B)], 1))
-        x0_2 = self.convs[2][0](torch.cat([x0_0A, x0_0B, x0_1, self.Ups[1][0](x1_1)], 1))
+        x0_1 = self.conv0_1(torch.cat([x0_0A, x0_0B, self.Up1_0(x1_0B)], 1))
+        x1_1 = self.conv1_1(torch.cat([x1_0A, x1_0B, self.Up2_0(x2_0B)], 1))
+        x0_2 = self.conv0_2(torch.cat([x0_0A, x0_0B, x0_1, self.Up1_1(x1_1)], 1))
 
 
-        x2_1 = self.convs[1][2](torch.cat([x2_0A, x2_0B, self.Ups[0][2](x3_0B)], 1))
-        x1_2 = self.convs[2][1](torch.cat([x1_0A, x1_0B, x1_1, self.Ups[1][1](x2_1)], 1))
-        x0_3 = self.convs[3][0](torch.cat([x0_0A, x0_0B, x0_1, x0_2, self.Ups[2][0](x1_2)], 1))
+        x2_1 = self.conv2_1(torch.cat([x2_0A, x2_0B, self.Up3_0(x3_0B)], 1))
+        x1_2 = self.conv1_2(torch.cat([x1_0A, x1_0B, x1_1, self.Up2_1(x2_1)], 1))
+        x0_3 = self.conv0_3(torch.cat([x0_0A, x0_0B, x0_1, x0_2, self.Up1_2(x1_2)], 1))
 
-        x3_1 = self.convs[1][3](torch.cat([x3_0A, x3_0B, self.Ups[0][3](x4_0B)], 1))
-        x2_2 = self.convs[2][2](torch.cat([x2_0A, x2_0B, x2_1, self.Ups[1][2](x3_1)], 1))
-        x1_3 = self.convs[3][1](torch.cat([x1_0A, x1_0B, x1_1, x1_2, self.Ups[2][1](x2_2)], 1))
-        x0_4 = self.convs[4][0](torch.cat([x0_0A, x0_0B, x0_1, x0_2, x0_3, self.Ups[3][0](x1_3)], 1))
+        x3_1 = self.conv3_1(torch.cat([x3_0A, x3_0B, self.Up4_0(x4_0B)], 1))
+        x2_2 = self.conv2_2(torch.cat([x2_0A, x2_0B, x2_1, self.Up3_1(x3_1)], 1))
+        x1_3 = self.conv1_3(torch.cat([x1_0A, x1_0B, x1_1, x1_2, self.Up2_2(x2_2)], 1))
+        x0_4 = self.conv0_4(torch.cat([x0_0A, x0_0B, x0_1, x0_2, x0_3, self.Up1_3(x1_3)], 1))
 
-        out1 = self.conv_final1(x0_1)
-        out2 = self.conv_final2(x0_2)
-        out3 = self.conv_final3(x0_3)
-        out4 = self.conv_final4(x0_4)
-        out = self.conv_final(torch.cat([out1, out2, out3, out4], 1))
-        # return (out1, out2, out3, out4, out)
-        return out
+
+        output1 = self.final1(x0_1)
+        output2 = self.final2(x0_2)
+        output3 = self.final3(x0_3)
+        output4 = self.final4(x0_4)
+        output = self.conv_final(torch.cat([output1, output2, output3, output4], 1))
+        # return (output1, output2, output3, output4, output)
+        return output
             
 if __name__ == '__main__':
-    input1=torch.randn(16,4,256,256)
-    input2=torch.randn(16,4,256,256)
-    net=SNUNet(4,6)
+    input1=torch.randn(4,4,256,256).cuda()
+    input2=torch.randn(4,4,256,256).cuda()
+    net=SNUNet(4,6).cuda()
     print(net(input1,input2).shape)
     print('okk!')
